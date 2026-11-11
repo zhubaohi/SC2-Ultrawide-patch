@@ -267,8 +267,6 @@ if that matters to you, stick with the `apply` line.
 ## 7. Files
 
 - `sc2-ultrawide.ps1`: the main program (status / apply / revert / live, adapts to both game versions)
-- `install.bat`, `live.bat`, `restore.bat`, `status.bat`: double-click wrappers that run
-  `apply` / `live` / `revert` / `status` respectively (they need `sc2-ultrawide.ps1` in the same folder)
 - `README.md`: this file (English)
 - `README.zh-CN.md`: the Chinese version of this documentation
 - `screenshots/`: in-game screenshots (5120 x 1440)
