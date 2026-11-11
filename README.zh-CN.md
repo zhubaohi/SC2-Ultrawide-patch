@@ -216,8 +216,11 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide
 ## 六、常见问题
 
 **问：提示「没有找到 SC2_x64.exe」**
-用 `-Exe` 手动指定，路径一般在 `<安装目录>\Versions\Base98310\SC2_x64.exe`。
-也可以先启动一次游戏，工具会读取游戏自己写的 `Documents\StarCraft II\ExecuteInfo.txt`。
+工具按顺序找：游戏自己写的 `Documents\StarCraft II\ExecuteInfo.txt`、战网注册表卸载项
+（`InstallLocation` 值）、以及对各固定磁盘的两级目录扫描（找叫 `StarCraft II` 的文件夹）。
+如果安装位置它找不到，用 `-Exe` 手动指定，给目录就行（安装根目录或 `Versions\Base...`
+子目录，如 `-Exe "D:\Games\StarCraft II"`）。先启动一次游戏再跑也有帮助，它会重写
+`ExecuteInfo.txt`。
 
 **问：提示「该文件的字节与支持版本不符」**
 游戏版本和补丁不匹配（多半是战网刚更新过游戏）。文件**没有**坏掉。
