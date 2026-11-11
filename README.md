@@ -2,6 +2,19 @@
 
 **[English](#english) · [中文](#中文)**
 
+## Install — one line · 一行安装
+
+1. Quit the game (including the "StarCraft II" process inside Battle.net). **退出游戏**（包括战网里的「星际争霸 II」进程）。
+2. Run this single line in PowerShell: **在 PowerShell 里运行这一行：**
+
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
+```
+
+Done when you see `Read-back check: all patches in effect`. 看到 `Read-back check: all patches in effect` 即成功，启动游戏即可。
+
+---
+
 A byte patch that lets StarCraft II render at a true 21:9 / 32:9 ultrawide
 resolution in **borderless windowed** mode, instead of being clamped back to
 16:9 by the engine.
@@ -32,24 +45,11 @@ desktop resolution**, so you normally don't have to pass any arguments.
 > On a version mismatch the tool prints the disagreeing bytes and refuses to modify — no half-patched file is ever produced.
 > Porting to a new version: see the "Porting Guide" at the end of `docs/技术分析.md` (Chinese).
 
-## 2. Install
+## 2. Install & in-game setup
 
-### 2.1 One-line install (preferred)
-
-1. **Quit the game** (including the "StarCraft II" process inside Battle.net).
-2. Run this single line in PowerShell:
-
-```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
-```
-
-It downloads the script to `%TEMP%` and applies the patch immediately
-(resolution is auto-detected from your desktop).
-Success when you see `Read-back check: all patches in effect`. Launch the game.
-
-### 2.2 Alternative: double-click install
-
-Cloned the repo instead? Double-click **`install.bat`** — it does the same thing.
+**The one-line install at the top of this page is the only way to patch** — it
+downloads the script to `%TEMP%` and applies it immediately (resolution is
+auto-detected from your desktop). No repo clone, no extra files.
 
 Recommended in-game settings:
 
@@ -63,16 +63,23 @@ you normally don't need to touch it.
 
 ### No restart? Live injection
 
-Double-click **`live.bat`** while the game is running: it injects the patch into the
-process memory and makes the game recompute its window at the new size immediately.
-Caveat: it does not survive a game exit — run it again after the next launch.
-Use `install.bat` for the permanent fix.
+While the game is running, run the same one-liner with **`live`** instead of
+`apply`:
+
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" live
+```
+
+It injects the patch into the process memory and makes the game recompute its
+window at the new size immediately. Caveat: it does not survive a game exit —
+run it again after the next launch. Use the `apply` one-liner for the permanent
+fix.
 
 > Note: on **5.0.17.98310** the label strings and aspect-ratio constants live on
 > read-only pages (`.rdata`), which the engine protects at runtime, so full memory
 > injection is impossible there. `live` detects this and refuses **before writing a
 > single byte** (zero writes, no half-patched state). On 98310, quit the game and use
-> `install.bat` (the file patch) — that is the reliable path. Details in
+> the `apply` one-liner (the file patch) — that is the reliable path. Details in
 > `docs/技术分析.md` §10.4 (Chinese).
 
 ### In-game verification (after apply)
@@ -197,10 +204,10 @@ Full derivation (decompilation evidence, runtime forensics, 98310 adaptation log
 
 ## 5. Reverting
 
-Double-click **`restore.bat`**, or:
+Run the same one-liner with **`revert`** instead of `apply`:
 
 ```powershell
-.\sc2-ultrawide.ps1 revert
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" revert
 ```
 
 Backups: `SC2_x64.exe.sc2uw.bak` and `Variables.txt.sc2uw.bak`.
@@ -218,11 +225,11 @@ Alternatively, launch the game once first — the tool reads the `ExecuteInfo.tx
 
 **Q: "The file's bytes do not match any supported version"**
 Game version and patch don't match (e.g. Battle.net just updated it). The file is **not** damaged.
-Either wait for a patch update for the new version, or use `restore.bat` / Battle.net Scan & Repair
-to restore the official file.
+Either wait for a patch update for the new version, or use the `revert` one-liner / Battle.net
+Scan & Repair to restore the official file.
 
 **Q: Patched, but the in-game window still doesn't fill the screen**
-1. Run `.\sc2-ultrawide.ps1 status` and confirm every site says `patched`;
+1. Run the same one-liner with `status` and confirm every site says `patched`;
 2. Confirm the in-game display mode is **Windowed Fullscreen** (not "Fullscreen", not "Windowed");
 3. Confirm the Windows desktop resolution is exactly 5120x1440 (after the dual-monitor setup).
 
@@ -232,22 +239,18 @@ The low-end entries (480p class) are unusable on a 5120x1440 display anyway — 
 normal use. The `3840x2160` entry is preserved untouched.
 
 **Q: It stopped working after a Battle.net update / Scan & Repair?**
-Normal — updates overwrite `SC2_x64.exe`. Just run `install.bat` again (a new version may need
-re-adaptation first).
+Normal — updates overwrite `SC2_x64.exe`. Just run the `apply` one-liner again (a new version
+may need re-adaptation first).
 
 **Q: Will anti-cheat detect this?**
-`install.bat` only modifies static bytes in the local executable — no memory writes, no process
-injection; lowest risk. `live.bat` does write into the game process memory; prefer `install.bat`
-if you are concerned.
+The `apply` one-liner only modifies static bytes in the local executable — no memory writes,
+no process injection; lowest risk. `live` does write into the game process memory; prefer the
+`apply` one-liner if you are concerned.
 
 ## 7. Files
 
 ```
 sc2-ultrawide.ps1      Main program (status / apply / revert / live, dual-version adaptive)
-install.bat            double-click = apply
-restore.bat            double-click = revert
-status.bat             double-click = status
-live.bat               double-click = live (for a running game)
 README.md              This file (English / 中文)
 docs/技术分析.md        Root cause, patch tables, forensics, 98310 adaptation, porting guide (Chinese)
 ```
@@ -289,23 +292,10 @@ modification entirely at your own risk.
 > 版本不符时工具会列出不符的字节并拒绝修改，不会产生半成品文件。
 > 想移植到新版本，见 `docs/技术分析.md` 末尾的「版本适配指南」。
 
-### 二、安装
+### 二、安装与游戏内设置
 
-#### 一行安装（推荐）
-
-1. **退出游戏**（包括战网里的「星际争霸 II」进程）。
-2. 在 PowerShell 里跑这一行：
-
-```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
-```
-
-脚本下载到 %TEMP% 并立即打补丁（分辨率自动检测）。
-看到 `Read-back check: all patches in effect` 即成功，启动游戏即可。
-
-#### 备选：双击安装
-
-克隆了仓库的话，直接双击 **`install.bat`**，效果相同。
+**页面顶部的「一行安装」是本补丁唯一的安装方式** —— 脚本下载到 %TEMP% 并立即打补丁
+（分辨率自动检测），无需克隆仓库、无需额外文件。
 
 游戏内的设置建议保持为：
 
@@ -318,12 +308,18 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide
 
 #### 不想重启游戏？
 
-游戏正在运行时双击 **`live.bat`**：它会把补丁直接注入进程内存，并让游戏立刻按新尺寸重算窗口。
-缺点是退出游戏后失效，下次启动要再点一次；想一劳永逸就用 `install.bat`。
+游戏正在运行时，跑同一行命令（把末尾的 `apply` 换成 **`live`**）：
+
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" live
+```
+
+它会把补丁直接注入进程内存，并让游戏立刻按新尺寸重算窗口。
+缺点是退出游戏后失效，下次启动要再点一次；想一劳永逸就用 `apply` 一行命令。
 
 > 注意：**5.0.17.98310** 的标签字符串与宽高比常量位于只读页（`.rdata`），引擎在运行时
 > 保护这些内存常量，无法完整注入。`live` 会在写入任何字节之前自动检测并明确拒绝
-> （零写入、不留半补丁状态）。此时请退出游戏用 `install.bat`（文件补丁），
+> （零写入、不留半补丁状态）。此时请退出游戏用 `apply` 一行命令（文件补丁），
 > 这是 98310 的可靠路径。详见 `docs/技术分析.md` 第十节第 4 小节。
 
 #### 游戏内验证（apply 之后）
@@ -444,10 +440,10 @@ windowheight=1440
 
 ### 五、还原
 
-双击 **`restore.bat`**，或：
+跑同一行命令（把末尾的 `apply` 换成 **`revert`**）：
 
 ```powershell
-.\sc2-ultrawide.ps1 revert
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" revert
 ```
 
 备份文件在 `SC2_x64.exe.sc2uw.bak` 与 `Variables.txt.sc2uw.bak`。
@@ -463,10 +459,10 @@ windowheight=1440
 
 **Q：提示「该文件的字节与支持版本不符」**
 游戏版本和补丁不匹配（比如战网刚更新过）。**不会**写坏文件。此时要么等补丁适配新版本，
-要么用 `restore.bat` / 战网扫描修复恢复官方文件。
+要么用 `revert` 一行命令 / 战网扫描修复恢复官方文件。
 
 **Q：打完补丁，游戏里窗口还是没铺满**
-1. 先跑 `.\sc2-ultrawide.ps1 status` 确认所有补丁点都是 `patched`；
+1. 跑同一行命令（加 `status`）确认所有补丁点都是 `patched`；
 2. 确认游戏里「显示模式」是**窗口化全屏**（不是「全屏」，也不是「窗口化」）；
 3. 确认 Windows 显示设置里桌面分辨率就是 5120x1440（双屏拼接后）。
 
@@ -475,20 +471,16 @@ windowheight=1440
 5120x1440 带鱼屏上本来就用不了，改它们对正常使用零影响；`3840x2160` 那档原样保留。
 
 **Q：战网更新/扫描修复后失效了？**
-正常。更新会覆盖 `SC2_x64.exe`，重新运行 `install.bat` 即可（新版本可能需要重新适配）。
+正常。更新会覆盖 `SC2_x64.exe`，重新运行 `apply` 一行命令即可（新版本可能需要重新适配）。
 
 **Q：会被反作弊检测吗？**
-`install.bat` 只修改本地可执行文件的静态字节，不改内存、不注入进程，风险最低。
-`live.bat` 会写入游戏进程内存，如在意请优先用 `install.bat`。
+`apply` 一行命令只修改本地可执行文件的静态字节，不改内存、不注入进程，风险最低。
+`live` 会写入游戏进程内存，如在意请优先用 `apply` 一行命令。
 
 ### 七、文件清单
 
 ```
 sc2-ultrawide.ps1      主程序（status / apply / revert / live，双版本自适应）
-install.bat            双击 = apply
-restore.bat            双击 = revert
-status.bat             双击 = status
-live.bat               双击 = live（游戏运行时用）
 README.md              本文件（English / 中文）
 docs/技术分析.md        根因、补丁表、取证过程、98310 适配、版本适配指南（中文）
 ```
