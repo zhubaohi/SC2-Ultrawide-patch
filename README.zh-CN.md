@@ -29,6 +29,16 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide
 
 > **致谢**：本作品是在 [NGA 这篇帖子](https://bbs.nga.cn/read.php?tid=47835650) 的原创作品基础上完成的。
 
+## 游戏内效果
+
+5120 x 1440（32:9）屏幕上的实际效果：
+
+![合作任务选人界面](screenshots/menu-coop.jpg)
+
+![游戏内实战](screenshots/gameplay.jpg)
+
+<p align="center"><img src="screenshots/options-resolution.png" width="760" alt="分辨率下拉表里新增的 5120 x 1440"></p>
+
 ## 一、系统要求
 
 | 项目 | 要求 |
@@ -216,7 +226,7 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide
 **问：打完补丁，游戏里窗口还是没铺满**
 1. 跑那一行命令（末尾加 `status`），确认所有补丁点都是 `patched`；
 2. 确认游戏里「显示模式」是**窗口化全屏**（不是「全屏」，也不是「窗口化」）；
-3. 确认 Windows 显示设置里桌面分辨率就是 5120x1440（双屏拼接后）。
+3. 确认 Windows 显示设置里桌面分辨率就是 5120x1440（单块 32:9 屏，或两块 2560x1440 拼接）。
 
 **问：为什么不新增一项，而是改低档条目？**
 分辨率表写死 17 项，内存里旁边紧挨着其它数据，没法原地加长。低档条目（480p 这一类）
@@ -235,6 +245,7 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide
 sc2-ultrawide.ps1      主程序（status / apply / revert / live，双版本自适应）
 README.md              英文文档
 README.zh-CN.md        本文件（中文）
+screenshots/           游戏内截图（5120x1440）
 docs/技术分析.md        技术分析：根因、补丁表、取证过程、98310 适配、版本适配指南
 ```
 
