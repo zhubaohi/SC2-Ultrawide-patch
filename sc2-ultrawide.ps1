@@ -45,8 +45,10 @@
     help    show help
 
 .PARAMETER Exe
-    Path to SC2_x64.exe. Omit to auto-detect (ExecuteInfo.txt first, then
-    common install roots).
+    Where the game is installed. May point at SC2_x64.exe, a version folder
+    (e.g. ...\Versions\Base98370), or the install root (e.g. E:\StarCraft II).
+    Omit to auto-detect: ExecuteInfo.txt first, then the Battle.net registry
+    uninstall entry, then a bounded scan of the fixed drives.
 
 .PARAMETER Config
     Path to Variables.txt. Omit for 'Documents\StarCraft II\Variables.txt'.
@@ -71,6 +73,7 @@
     .\sc2-ultrawide.ps1 live
     .\sc2-ultrawide.ps1 revert
     .\sc2-ultrawide.ps1 apply -Width 3440 -Height 1440   # only change the default window size in the config
+    .\sc2-ultrawide.ps1 status -Exe "D:\Games\StarCraft II"   # unusual install location
 #>
 [CmdletBinding()]
 param(
@@ -301,57 +304,173 @@ function HexToBytes {
 # --------------------------------------------------------------------------
 # Locate the game
 # --------------------------------------------------------------------------
+# Install locations vary a lot between machines (drive letter, folder name,
+# several game versions installed). Detection is staged:
+#   0. -Exe / $env:SC2_EXE  the exe file, a version folder, or the install root
+#   1. ExecuteInfo.txt      the launch info the game itself writes
+#   2. registry             Battle.net uninstall entry (InstallLocation value)
+#   3. bounded scan         fixed drives, folders named 'StarCraft II' up to
+#                           two levels deep
+# Newer game versions win when several candidates are found.
 
 function Get-DocsDir {
+    # Config dir override (for testing / unusual profiles); the game keeps
+    # its config in Documents\StarCraft II by default.
+    if ($env:SC2_CONFIG_DIR) { return $env:SC2_CONFIG_DIR }
     return (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'StarCraft II')
+}
+
+function Get-VersionNumber {
+    param([string]$Name)
+    $m = [regex]::Match($Name, '\d+')
+    if ($m.Success) { return [long]$m.Value }
+    return 0
+}
+
+function Resolve-GameExe {
+    # Accepts: SC2_x64.exe itself, the version folder (Versions\Base98370),
+    # or the install root (the folder containing Versions). Returns the
+    # SC2_x64.exe path, or $null when nothing resolves.
+    param([string]$P)
+    if (-not $P -or -not (Test-Path -LiteralPath $P)) { return $null }
+    $full = (Resolve-Path -LiteralPath $P).Path
+    $fi = Get-Item -LiteralPath $full
+    if (-not $fi.PSIsContainer) {
+        if ($fi.Name -ieq 'SC2_x64.exe') { return $full }
+        return $null
+    }
+    $direct = Join-Path $full 'SC2_x64.exe'
+    if (Test-Path -LiteralPath $direct) { return $direct }
+    $versions = Join-Path $full 'Versions'
+    if (-not (Test-Path -LiteralPath $versions)) { return $null }
+    $best = $null; $bestNum = -1
+    foreach ($dir in Get-ChildItem -LiteralPath $versions -Directory -ErrorAction SilentlyContinue) {
+        $cand = Join-Path $dir.FullName 'SC2_x64.exe'
+        if (Test-Path -LiteralPath $cand) {
+            $n = Get-VersionNumber -Name $dir.Name
+            if ($n -gt $bestNum) { $bestNum = $n; $best = $cand }
+        }
+    }
+    return $best
 }
 
 function Find-Sc2Exe {
     param([string]$Explicit)
+    # returns [pscustomobject]@{ Path; Source; Candidates }
 
+    # Stage 0: explicit location
     if ($Explicit) {
-        if (-not (Test-Path -LiteralPath $Explicit)) { throw "File not found: $Explicit" }
-        return (Resolve-Path -LiteralPath $Explicit).Path
+        $p = Resolve-GameExe -P $Explicit
+        if (-not $p) {
+            throw "Cannot find SC2_x64.exe at or under: $Explicit`n" +
+                  "  -Exe may point at the exe, a version folder, or the install root."
+        }
+        return [pscustomobject]@{
+            Path = $p; Source = 'explicit -Exe';
+            Candidates = @([pscustomobject]@{ Build = 'explicit'; Path = $p; Source = 'explicit -Exe' })
+        }
     }
-    if ($env:SC2_EXE -and (Test-Path -LiteralPath $env:SC2_EXE)) {
-        return (Resolve-Path -LiteralPath $env:SC2_EXE).Path
+    if ($env:SC2_EXE) {
+        $p = Resolve-GameExe -P $env:SC2_EXE
+        if ($p) {
+            return [pscustomobject]@{
+                Path = $p; Source = 'env SC2_EXE';
+                Candidates = @([pscustomobject]@{ Build = 'env'; Path = $p; Source = 'env SC2_EXE' })
+            }
+        }
+        # invalid env value: fall through to auto-detect
     }
 
-    # The launch info the game itself writes is the most reliable
+    # Stage 1: ExecuteInfo.txt (written by the game itself; most reliable)
     $execInfo = Join-Path (Get-DocsDir) 'ExecuteInfo.txt'
+    $execInfoState = 'missing'
     if (Test-Path -LiteralPath $execInfo) {
+        $execInfoState = 'present'
         foreach ($line in [System.IO.File]::ReadAllLines($execInfo)) {
             if ($line -match '^\s*executable\s*=\s*(.+?)\s*$') {
-                $p = $Matches[1].Trim().Trim('"')
-                if (Test-Path -LiteralPath $p) { return $p }
+                $cand = Resolve-GameExe -P $Matches[1].Trim().Trim('"')
+                if ($cand) {
+                    return [pscustomobject]@{
+                        Path = $cand; Source = 'ExecuteInfo.txt';
+                        Candidates = @([pscustomobject]@{ Build = 'execinfo'; Path = $cand; Source = 'ExecuteInfo.txt' })
+                    }
+                }
             }
         }
     }
 
-    # Common install roots
-    $roots = @(
-        'C:\Program Files\StarCraft II',
-        'C:\Program Files (x86)\StarCraft II',
-        'D:\StarCraft II', 'E:\StarCraft II', 'F:\StarCraft II',
-        'D:\Games\StarCraft II', 'E:\Games\StarCraft II', 'F:\Games\StarCraft II',
-        'D:\Battle.net\StarCraft II', 'E:\Battle.net\StarCraft II', 'C:\Battle.net\StarCraft II'
+    # Collect candidate roots from the remaining stages
+    $regRoots = New-Object System.Collections.Generic.List[string]
+
+    # Stage 2: registry (Battle.net writes an uninstall entry with InstallLocation)
+    $regBases = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall',
+        'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
     )
-    $found = @()
-    foreach ($root in $roots) {
+    foreach ($base in $regBases) {
+        if (-not (Test-Path -LiteralPath $base)) { continue }
+        foreach ($dir in Get-ChildItem -LiteralPath $base -ErrorAction SilentlyContinue) {
+            $dn = (Get-ItemProperty -LiteralPath $dir.PSPath -Name DisplayName -ErrorAction SilentlyContinue).DisplayName
+            if ($dn -and $dn -match 'StarCraft\s+II') {
+                $il = (Get-ItemProperty -LiteralPath $dir.PSPath -Name InstallLocation -ErrorAction SilentlyContinue).InstallLocation
+                if ($il -and $il -match '^[a-zA-Z]:\\') { $regRoots.Add($il.Trim().TrimEnd('\')) }
+            }
+        }
+    }
+
+    # Stage 3: bounded scan of fixed drives (up to two levels deep)
+    $scanRoots = New-Object System.Collections.Generic.List[string]
+    $drives = @()
+    try {
+        $drives = [System.IO.DriveInfo]::GetDrives() | Where-Object { $_.IsReady -and $_.DriveType -eq 'Fixed' }
+    } catch { }
+    foreach ($d in $drives) {
+        $root = $d.Name
+        $top = $null
+        try { $top = Get-ChildItem -LiteralPath $root -Directory -Force -ErrorAction Stop } catch { $top = $null }
+        if (-not $top) { continue }
+        foreach ($t in $top) {
+            if ($t.Attributes -band [System.IO.FileAttributes]::Hidden) { continue }
+            if ($t.Attributes -band [System.IO.FileAttributes]::System) { continue }
+            if ($t.Name -eq 'StarCraft II') { $scanRoots.Add($t.FullName); continue }
+            $second = $null
+            try { $second = Get-ChildItem -LiteralPath $t.FullName -Directory -ErrorAction Stop } catch { $second = $null }
+            foreach ($s in $second) {
+                if ($s.Name -eq 'StarCraft II') { $scanRoots.Add($s.FullName) }
+            }
+        }
+    }
+
+    # Probe every root for Versions\*\SC2_x64.exe
+    $found = New-Object System.Collections.Generic.List[object]
+    $seenPaths = @{}
+    foreach ($root in ($regRoots + $scanRoots)) {
+        if ($seenPaths.ContainsKey($root.ToUpperInvariant())) { continue }
+        $seenPaths[$root.ToUpperInvariant()] = $true
         $versions = Join-Path $root 'Versions'
         if (-not (Test-Path -LiteralPath $versions)) { continue }
         foreach ($dir in Get-ChildItem -LiteralPath $versions -Directory -ErrorAction SilentlyContinue) {
-            $candidate = Join-Path $dir.FullName 'SC2_x64.exe'
-            if (Test-Path -LiteralPath $candidate) {
-                $found += [pscustomobject]@{ Build = $dir.Name; Path = $candidate }
+            $cand = Join-Path $dir.FullName 'SC2_x64.exe'
+            if (Test-Path -LiteralPath $cand) {
+                $src = if ($regRoots.Contains($root)) { 'registry (uninstall entry)' } else { 'scan' }
+                $found.Add([pscustomobject]@{ Build = $dir.Name; Path = $cand; Source = $src })
             }
         }
     }
+
     if ($found.Count -gt 0) {
-        return ($found | Sort-Object Build | Select-Object -Last 1).Path
+        $best = $found | Sort-Object { Get-VersionNumber -Name $_.Build } -Descending | Select-Object -First 1
+        return [pscustomobject]@{ Path = $best.Path; Source = $best.Source; Candidates = $found }
     }
 
-    throw "SC2_x64.exe not found. Specify the path with -Exe, e.g.:`n  .\sc2-ultrawide.ps1 status -Exe ""D:\Games\StarCraft II\Versions\Base98370\SC2_x64.exe"""
+    $driveList = (($drives | ForEach-Object { $_.Name }) -join ' ')
+    throw ("SC2_x64.exe not found. Searched:`n" +
+        "  - config dir   : {0}  (ExecuteInfo.txt: {1})`n" +
+        "  - registry     : Battle.net uninstall entries (InstallLocation)`n" +
+        "  - drive scan   : {2}  (folders named 'StarCraft II' up to 2 levels deep)`n" +
+        "Specify the location with -Exe; a folder is fine, e.g.:`n" +
+        "  .\sc2-ultrawide.ps1 status -Exe ""D:\Games\StarCraft II""" -f $env:SC2_CONFIG_DIR, $execInfoState, $driveList)
 }
 
 # --------------------------------------------------------------------------
@@ -573,10 +692,18 @@ function Set-GameConfig {
 }
 
 function Invoke-Status {
-    param([string]$ExePath, [string]$CfgPath, $Profile, $Sites)
+    param([string]$ExePath, [string]$CfgPath, $Profile, $Sites, [object]$Loc)
 
     $pe = Read-PeInfo -Path $ExePath
     Write-Host "Executable : $ExePath"
+    if ($Loc) {
+        Write-Host ("Found via  : {0}" -f $Loc.Source)
+        $others = @($Loc.Candidates | Where-Object { $_.Path -ne $ExePath })
+        if ($others.Count -gt 0) {
+            Write-Host 'Other versions found:'
+            foreach ($o in $others) { Write-Host "    $o.Path" }
+        }
+    }
     Write-Host "Version    : $($pe.Version)"
     if ($Profile) {
         Write-Host ("Patch table: version {0} ({1} sites: {2} ultrawide entries x 4 + 3 constants/thresholds)" -f $Profile.Id, $Profile.Sites.Count, (($Profile.Sites.Count - 3) / 4))
@@ -947,7 +1074,8 @@ if ($Width -lt 640 -or $Height -lt 360 -or $Width -gt 16383 -or $Height -gt 1638
 $profile = $null
 $sites = $null
 try {
-    $exePath = Find-Sc2Exe -Explicit $Exe
+    $exeLoc = Find-Sc2Exe -Explicit $Exe
+    $exePath = $exeLoc.Path
     $cfgPath = Get-ConfigPath -Explicit $Config
     $peInfo = Read-PeInfo -Path $exePath
     $profile = Select-VersionProfile -Pe $peInfo
@@ -958,7 +1086,7 @@ try {
 }
 
 switch ($Command) {
-    'status' { Invoke-Status -ExePath $exePath -CfgPath $cfgPath -Profile $profile -Sites $sites }
+    'status' { Invoke-Status -ExePath $exePath -CfgPath $cfgPath -Profile $profile -Sites $sites -Loc $exeLoc }
     'apply' { $code = Invoke-Apply -ExePath $exePath -CfgPath $cfgPath -Sites $sites -WhatIfOnly:$DryRun }
     'revert' { $code = Invoke-Revert -ExePath $exePath -Sites $sites }
     'live' { $code = Invoke-Live -Sites $sites -W $Width -H $Height }
