@@ -30,6 +30,16 @@ borderless windowed mode.
 
 > **Credit**: this project builds on the original work in [this NGA post](https://bbs.nga.cn/read.php?tid=47835650).
 
+## In action
+
+Rendered edge to edge on a 5120 x 1440 (32:9) display:
+
+![Co-op mission select, edge to edge](screenshots/menu-coop.jpg)
+
+![In-game](screenshots/gameplay.jpg)
+
+<p align="center"><img src="screenshots/options-resolution.png" width="760" alt="The new 5120 x 1440 entry in the resolution dropdown"></p>
+
 ## 1. Requirements
 
 | Item | Requirement |
@@ -234,7 +244,7 @@ the `revert` line or Battle.net's Scan and Repair to restore the official file.
 **Patched, but the in-game window still does not fill the screen**
 1. Run the one line with `status` and confirm every site says `patched`.
 2. Confirm the in-game display mode is **Windowed Fullscreen** (not "Fullscreen", not "Windowed").
-3. Confirm the Windows desktop resolution is exactly 5120x1440 after the dual-monitor setup.
+3. Confirm the Windows desktop resolution is exactly 5120x1440 (a single 32:9 panel, or two 2560x1440 monitors tiled side by side).
 
 **Why rewrite the low-end entries instead of adding a new one?**
 The table is fixed at 17 entries with adjacent data right next to it in memory, so it cannot be
@@ -256,6 +266,7 @@ if that matters to you, stick with the `apply` line.
 - `sc2-ultrawide.ps1`: the main program (status / apply / revert / live, adapts to both game versions)
 - `README.md`: this file (English)
 - `README.zh-CN.md`: the Chinese version of this documentation
+- `screenshots/`: in-game screenshots (5120 x 1440)
 - `docs/`: the technical log (Chinese): root cause, patch tables, forensics, 98310 adaptation, porting guide
 
 ## 8. Disclaimer
