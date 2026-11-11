@@ -232,9 +232,12 @@ If you want it back, restore the corresponding lines from the `.sc2uw.bak` file.
 ## 6. FAQ
 
 **"SC2_x64.exe not found"**
-Point the tool at it with `-Exe`; the path is usually `<install>\Versions\Base98310\SC2_x64.exe`.
-Or launch the game once first: the tool reads the `ExecuteInfo.txt` the game writes to
-`Documents\StarCraft II`.
+The tool searches in this order: the `ExecuteInfo.txt` the game writes to
+`Documents\StarCraft II`, the Battle.net registry entry, and a scan of the fixed drives
+(folders named `StarCraft II` up to two levels deep). If your install is somewhere the
+search cannot reach, point the tool at it with `-Exe` (a folder is fine: the install root
+or a `Versions\Base...` directory, e.g. `-Exe "D:\Games\StarCraft II"`). Launching the
+game once first also helps, since it rewrites `ExecuteInfo.txt`.
 
 **"The file's bytes do not match any supported version"**
 The game version and the patch do not match (Battle.net probably just updated the game).
