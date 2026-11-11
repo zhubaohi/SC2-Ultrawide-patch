@@ -1,17 +1,20 @@
 # StarCraft II Ultrawide Patch (21:9 / 32:9)
 
-**English** · [Chinese](README.zh-CN.md)
+**English** · [中文](README.zh-CN.md)
 
 ## Install in one line
 
-1. **Quit the game** first (including the "StarCraft II" process that is still running inside Battle.net).
-2. **Run this one line in PowerShell**:
+1. **Quit the game** (close Battle.net, or quit StarCraft II from inside it). The game process must be gone: while the game is running, Windows locks its executable, so the patch cannot be written.
+2. **Open PowerShell**: press the Windows key, type `PowerShell`, press Enter.
+3. **Paste this line and press Enter**:
 
 ```powershell
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
 ```
 
-You are done when you see `Read-back check: all patches in effect`. Launch the game.
+4. You are done when you see `Read-back check: all patches in effect`. Launch the game from Battle.net and pick your ultrawide resolution in **Options → Video**.
+
+That line is the whole install: it downloads the patch script to a temp folder, applies the patch, and writes the game config for you. Nothing else to do.
 
 ---
 
