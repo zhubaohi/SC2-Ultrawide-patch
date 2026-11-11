@@ -1,17 +1,20 @@
 # 星际争霸2 超宽屏补丁（21:9 / 32:9）
 
-[英文](README.md) · **中文**
+[English](README.md) · **中文**
 
 ## 一行安装
 
-1. 先**退出游戏**（包括战网里还在跑的「星际争霸 II」进程）。
-2. 在 PowerShell 里**运行这一行**：
+1. **先退出游戏**（关掉战网，或在战网里退出星际争霸2）。游戏进程必须退干净：进程还在的话，游戏文件被 Windows 占用，补丁写不进去。
+2. **打开 PowerShell**：按 Windows 键，输入 `PowerShell`，回车。
+3. **把这一行粘进去，回车**：
 
 ```powershell
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
 ```
 
-看到 `Read-back check: all patches in effect` 就成了，启动游戏即可。
+4. 看到 `Read-back check: all patches in effect` 就成了。从战网启动游戏，在 **选项 → 视频** 里选中你的超宽分辨率。
+
+这一行就是全部安装过程：自动把脚本下到临时目录、打好补丁、写好游戏配置，不用自己去下文件。
 
 ---
 
