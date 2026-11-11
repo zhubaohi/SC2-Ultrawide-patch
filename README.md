@@ -1,10 +1,10 @@
-# StarCraft II Ultrawide Patch (21:9 / 32:9 · 带鱼屏)
+# StarCraft II Ultrawide Patch (21:9 / 32:9)
 
 **[English](#english) · [中文](#中文)**
 
-A byte patch that lets StarCraft II render at a true ultrawide — 带鱼屏
-(lit. "belt-fish screen", the Chinese nickname for 21:9/32:9 monitors) — resolution
-in **borderless windowed** mode, instead of being clamped back to 16:9 by the engine.
+A byte patch that lets StarCraft II render at a true 21:9 / 32:9 ultrawide
+resolution in **borderless windowed** mode, instead of being clamped back to
+16:9 by the engine.
 It covers the common 21:9 / 32:9 setups out of the box and **auto-detects your
 desktop resolution**, so you normally don't have to pass any arguments.
 
@@ -27,16 +27,29 @@ desktop resolution**, so you normally don't have to pass any arguments.
 | OS | Windows 10 / 11 (64-bit) |
 | Runtime | Built-in Windows PowerShell 5.1, nothing extra to install |
 | Game version | **5.0.17.98310**, **5.0.15.98370** or **5.0.17.98370** (auto-detected) |
-| Display | 5120x1440 dual-monitor setup, or any resolution you specify |
+| Display | Any common 21:9 / 32:9 ultrawide display (3440x1440, 5120x1440, …), or any resolution you specify |
 
 > On a version mismatch the tool prints the disagreeing bytes and refuses to modify — no half-patched file is ever produced.
 > Porting to a new version: see the "Porting Guide" at the end of `docs/技术分析.md` (Chinese).
 
-## 2. Three-step install
+## 2. Install
+
+### 2.1 One-line install (preferred)
 
 1. **Quit the game** (including the "StarCraft II" process inside Battle.net).
-2. Double-click **`install.bat`**.
-3. Success when you see `Read-back check: all patches in effect`. Launch the game.
+2. Run this single line in PowerShell:
+
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
+```
+
+It downloads the script to `%TEMP%` and applies the patch immediately
+(resolution is auto-detected from your desktop).
+Success when you see `Read-back check: all patches in effect`. Launch the game.
+
+### 2.2 Alternative: double-click install
+
+Cloned the repo instead? Double-click **`install.bat`** — it does the same thing.
 
 Recommended in-game settings:
 
@@ -47,17 +60,6 @@ Resolution   = your ultrawide display resolution (e.g. 5120x1440 / 3440x1440)
 
 The config is written automatically by the patch (auto-detected from your desktop);
 you normally don't need to touch it.
-
-### No download: one-line install
-
-Don't want to clone the repo? Run this single line in PowerShell:
-
-```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
-```
-
-It downloads the script to `%TEMP%` and applies the patch immediately
-(resolution is auto-detected from your desktop).
 
 ### No restart? Live injection
 
@@ -254,8 +256,11 @@ docs/技术分析.md        Root cause, patch tables, forensics, 98310 adaptatio
 
 The patch targets the local client and local file behavior (single-player/menu context). It modifies
 local files only; a backup is made automatically before patching and can be restored anytime.
-Re-adaptation is required after a game version update. Any account or file issues caused by
-third-party modifications are your own responsibility to assess.
+Re-adaptation is required after a game version update.
+
+**The author is not liable for any consequences of using this patch, including
+account bans.** Any risk (account, files, hardware) is yours alone — you use this
+modification entirely at your own risk.
 
 ---
 
@@ -279,16 +284,28 @@ third-party modifications are your own responsibility to assess.
 | 系统 | Windows 10 / 11（64 位） |
 | 运行环境 | 自带的 Windows PowerShell 5.1，无需额外安装 |
 | 游戏版本 | **5.0.17.98310**、**5.0.15.98370** 或 **5.0.17.98370**（自动识别） |
-| 显示器 | 5120x1440 双屏拼接（32:9 带鱼屏），或任意你指定的分辨率 |
+| 显示器 | 任意常用 21:9 / 32:9 带鱼屏（3440x1440、5120x1440 等），或任意你指定的分辨率 |
 
 > 版本不符时工具会列出不符的字节并拒绝修改，不会产生半成品文件。
 > 想移植到新版本，见 `docs/技术分析.md` 末尾的「版本适配指南」。
 
-### 二、三步搞定
+### 二、安装
+
+#### 一行安装（推荐）
 
 1. **退出游戏**（包括战网里的「星际争霸 II」进程）。
-2. 双击 **`install.bat`**。
-3. 看到 `Read-back check: all patches in effect` 即成功，启动游戏即可。
+2. 在 PowerShell 里跑这一行：
+
+```powershell
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
+```
+
+脚本下载到 %TEMP% 并立即打补丁（分辨率自动检测）。
+看到 `Read-back check: all patches in effect` 即成功，启动游戏即可。
+
+#### 备选：双击安装
+
+克隆了仓库的话，直接双击 **`install.bat`**，效果相同。
 
 游戏内的设置建议保持为：
 
@@ -298,16 +315,6 @@ third-party modifications are your own responsibility to assess.
 ```
 
 配置由补丁自动写入（桌面分辨率自动检测），一般不需要手动改。
-
-#### 不想下载仓库：一行安装
-
-在 PowerShell 里跑这一行：
-
-```powershell
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
-```
-
-脚本下载到 %TEMP% 并立即打补丁（分辨率自动检测）。
 
 #### 不想重启游戏？
 
@@ -489,4 +496,7 @@ docs/技术分析.md        根因、补丁表、取证过程、98310 适配、�
 ### 八、免责说明
 
 补丁针对单机/菜单与本地客户端行为，修改的是本地文件。使用前已自动备份，可随时还原。
-游戏版本更新后需重新适配；因第三方修改导致的账号或文件问题，请自行评估。
+游戏版本更新后需重新适配。
+
+**作者对使用本补丁导致的任何后果概不负责（包括封号）。** 使用本修改即代表你完全
+自行承担风险（账号、文件、硬件）。
