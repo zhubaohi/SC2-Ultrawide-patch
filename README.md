@@ -4,14 +4,17 @@
 
 ## Install — one line · 一行安装
 
-1. Quit the game (including the "StarCraft II" process inside Battle.net). **退出游戏**（包括战网里的「星际争霸 II」进程）。
-2. Run this single line in PowerShell: **在 PowerShell 里运行这一行：**
+1. **Quit the game** (including the "StarCraft II" process inside Battle.net).
+   **退出游戏**（包括战网里的「星际争霸 II」进程）。
+2. **Run this single line in PowerShell**:
+   **在 PowerShell 里运行这一行**：
 
 ```powershell
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide-patch/main/sc2-ultrawide.ps1' -OutFile "$env:TEMP\sc2ulw.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\sc2ulw.ps1" apply
 ```
 
-Done when you see `Read-back check: all patches in effect`. 看到 `Read-back check: all patches in effect` 即成功，启动游戏即可。
+**Done when you see** `Read-back check: all patches in effect`.
+**看到** `Read-back check: all patches in effect` **即成功**，启动游戏即可。
 
 ---
 
