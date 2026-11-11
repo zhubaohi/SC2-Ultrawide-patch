@@ -246,6 +246,8 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/zhubaohi/SC2-Ultrawide
 
 ```
 sc2-ultrawide.ps1      主程序（status / apply / revert / live，双版本自适应）
+install.bat 等 4 个    双击包装，分别跑 apply / live / revert / status
+                       （需要与 sc2-ultrawide.ps1 在同一目录）
 README.md              英文文档
 README.zh-CN.md        本文件（中文）
 screenshots/           游戏内截图（5120x1440）
